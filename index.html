@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Știri de Adevăr</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 15px;
+      background: #fff0f0;
+      color: #900;
+    }
+    header { text-align: center; border-bottom: 3px solid #900; padding-bottom: 15px; }
+    nav a { margin: 0 10px; text-decoration: none; color: #b30000; font-weight: bold; }
+    article {
+      background: white;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 5px;
+      border: 2px solid #900;
+      box-shadow: 1px 1px 8px #cc000033;
+    }
+    h1, h2 { color: #900; }
+    time { font-size: 0.9em; color: #a33; }
+    #new-post { background: #fff7f7; border: 2px dashed #900; padding: 15px; border-radius: 5px; }
+    input, textarea {
+      width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #900; border-radius: 4px;
+    }
+    button {
+      background: #900; color: white; padding: 10px; border: none; border-radius: 4px; margin-top: 10px;
+      cursor: pointer; font-weight: bold;
+    }
+    button:hover { background: #b30000; }
+    .comment-section { margin-top: 20px; border-top: 1px solid #900; padding-top: 10px; }
+    .comment { background: #fee; padding: 8px; margin: 5px 0; border-radius: 3px; border: 1px solid #c00; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Știri de Adevăr</h1>
+  <nav>
+    <a href="#">Acasă</a>
+    <a href="#">Despre</a>
+    <a href="#">Contact</a>
+  </nav>
+</header>
+
+<section id="new-post">
+  <h2>Adaugă un articol nou</h2>
+  <input type="text" id="post-title" placeholder="Titlul articolului" required>
+  <textarea id="post-content" placeholder="Conținutul articolului" rows="4" required></textarea>
+  <button onclick="addPost()">Publică articol</button>
+</section>
+
+<main id="posts"></main>
+
+<footer>
+  &copy; 2025 Știri de Adevăr
+</footer>
+
+<script>
+  function loadPosts() {
+    const postsContainer = document.getElementById("posts");
+    postsContainer.innerHTML = "";
+    const posts = JSON.parse(localStorage.getItem("site-posts")) || [];
+
+    posts.forEach((post, index) => {
+      const article = document.createElement("article");
+      article.innerHTML = `
+        <h2>${escapeHTML(post.title)}</h2>
+        <time>${post.date}</time>
+        <p>${escapeHTML(post.content)}</p>
+        <section class="comment-section">
+          <h3>Comentarii</h3>
+          <div class="comments-list" id="comments-${index}"></div>
+          <input type="text" id="name-${index}" placeholder="Numele tău">
+          <textarea id="comment-${index}" placeholder="Scrie un comentariu..." rows="2"></textarea>
+          <button onclick="addComment(${index})">Trimite</button>
+        </section>
+      `;
+      postsContainer.appendChild(article);
+      loadComments(index);
+    });
+  }
+
+  function addPost() {
+    const title = document.getElementById("post-title").value.trim();
+    const content = document.getElementById("post-content").value.trim();
+    if (!title || !content) return;
+
+    const posts = JSON.parse(localStorage.getItem("site-posts")) || [];
+    posts.unshift({
+      title,
+      content,
+      date: new Date().toLocaleDateString("ro-RO")
+    });
+    localStorage.setItem("site-posts", JSON.stringify(posts));
+
+    document.getElementById("post-title").value = "";
+    document.getElementById("post-content").value = "";
+    loadPosts();
+  }
+
+  function addComment(postIndex) {
+    const name = document.getElementById(`name-${postIndex}`).value.trim();
+    const text = document.getElementById(`comment-${postIndex}`).value.trim();
+    if (!name || !text) return;
+
+    const commentsKey = `comments-${postIndex}`;
+    const comments = JSON.parse(localStorage.getItem(commentsKey)) || [];
+    comments.push({ name, text });
+    localStorage.setItem(commentsKey, JSON.stringify(comments));
+
+    document.getElementById(`name-${postIndex}`).value = "";
+    document.getElementById(`comment-${postIndex}`).value = "";
+    loadComments(postIndex);
+  }
+
+  function loadComments(postIndex) {
+    const commentsDiv = document.getElementById(`comments-${postIndex}`);
+    commentsDiv.innerHTML = "";
+    const comments = JSON.parse(localStorage.getItem(`comments-${postIndex}`)) || [];
+    comments.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "comment";
+      div.innerHTML = `<strong>${escapeHTML(c.name)}</strong><br>${escapeHTML(c.text)}`;
+      commentsDiv.appendChild(div);
+    });
+  }
+
+  function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  loadPosts();
+</script>
+
+</body>
+</html>
